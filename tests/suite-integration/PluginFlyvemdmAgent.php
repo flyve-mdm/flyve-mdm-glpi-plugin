@@ -683,6 +683,48 @@ class PluginFlyvemdmAgent extends CommonTestCase {
    }
 
    /**
+    * test ping message
+    * @tags testPingRequest
+    */
+   public function testRebootRequest() {
+      list($user, $serial, $guestEmail, $invitation) = $this->createUserInvitation(\User::getForeignKeyField());
+      $agent = $this->agentFromInvitation($user, $guestEmail, $serial,
+         $invitation->getField('invitation_token'));
+
+      // Get enrolment data to enable the agent's MQTT account
+      $this->boolean($agent->getFromDB($agent->getID()))->isTrue();
+
+      // Find the last existing ID of logged MQTT messages
+      $log = new \PluginFlyvemdmMqttlog();
+      $lastLogId = \PluginFlyvemdmCommon::getMax($log, '', 'id');
+
+      $updateSuccess = $agent->update([
+         'id'    => $agent->getID(),
+         '_reboot' => '',
+      ]);
+
+      // Update shall fail because the ping answer will not occur
+      $this->boolean($updateSuccess)->isFalse();
+
+      // Get the latest MQTT message
+      sleep(2);
+
+      $logEntryFound = 0;
+      $rows = $log->find("`direction` = 'O' AND `id` > '$lastLogId'");
+      foreach ($rows as $row) {
+         if ($row['topic'] == $agent->getTopic() . '/Command/Reboot') {
+            $logEntryFound = $row['id'];
+            break;
+         }
+      }
+      $this->integer((int) $logEntryFound)->isGreaterThan(0);
+
+      // check the message
+      $mqttMessage = ['query' => 'Reboot'];
+      $this->string($row['message'])->isEqualTo(json_encode($mqttMessage, JSON_UNESCAPED_SLASHES));
+   }
+
+   /**
     * test geolocate message
     * @tags testGeolocateRequest
     */

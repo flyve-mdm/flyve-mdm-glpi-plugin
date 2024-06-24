@@ -64,6 +64,13 @@ if (isset($_POST["add"])) {
       '_ping_request' => '',
    ]);
    Html::back();
+} else if (isset($_POST['reboot'])) {
+   $agent->check($_POST['id'], UPDATE);
+   $agent->update([
+      'id'      => $_POST['id'],
+      '_reboot' => '',
+   ]);
+   Html::back();
 } else if (isset($_POST['geolocate'])) {
    $agent->check($_POST['id'], UPDATE);
    $agent->update([

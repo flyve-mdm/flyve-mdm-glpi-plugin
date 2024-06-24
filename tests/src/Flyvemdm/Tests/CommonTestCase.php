@@ -651,6 +651,7 @@ class CommonTestCase extends GlpiCommonTestCase {
       return [
          'Command/Subscribe',
          'Command/Ping',
+         'Command/Reboot',
          'Command/Geolocate',
          'Command/Inventory',
          'Command/Lock',

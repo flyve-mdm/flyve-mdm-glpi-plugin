@@ -264,6 +264,7 @@ class PluginFlyvemdmAgent extends CommonDBTM implements PluginFlyvemdmNotifiable
             'canUpdate'       => $canUpdate,
             'agent'           => $fields,
             'pingButton'      => Html::submit(_x('button', 'Ping'), ['name' => 'ping']),
+            'rebootButton'    => Html::submit(_x('button', 'Reboot'), ['name' => 'reboot']),
             'geolocateButton' => Html::submit(_x('button', 'Geolocate'), ['name' => 'geolocate']),
             'inventoryButton' => Html::submit(_x('button', 'Inventory'), ['name' => 'inventory']),
 
@@ -597,7 +598,7 @@ class PluginFlyvemdmAgent extends CommonDBTM implements PluginFlyvemdmNotifiable
       }
 
       //Send a connection status request to the device
-      if (isset($input['_ping_request']) || isset($input['_geolocate_request']) || isset($input['_inventory_request'])) {
+      if (isset($input['_ping_request']) || isset($input['_reboot']) || isset($input['_geolocate_request']) || isset($input['_inventory_request'])) {
          if ($this->getTopic() === null) {
             Session::addMessageAfterRedirect(__("The device is not enrolled yet", 'flyvemdm'));
             return false;
@@ -607,6 +608,15 @@ class PluginFlyvemdmAgent extends CommonDBTM implements PluginFlyvemdmNotifiable
       if (isset($input['_ping_request'])) {
          try {
             $this->sendPingQuery();
+         } catch (AgentSendQueryException $exception) {
+            Session::addMessageAfterRedirect($exception->getMessage());
+            return false;
+         }
+      }
+
+      if (isset($input['_reboot'])) {
+         try {
+            $this->sendRebootQuery();
          } catch (AgentSendQueryException $exception) {
             Session::addMessageAfterRedirect($exception->getMessage());
             return false;
@@ -1693,6 +1703,7 @@ class PluginFlyvemdmAgent extends CommonDBTM implements PluginFlyvemdmNotifiable
       return array_merge($topics, [
          'Command/Subscribe',
          'Command/Ping',
+         'Command/Reboot',
          'Command/Geolocate',
          'Command/Inventory',
          'Command/Lock',
@@ -1835,6 +1846,44 @@ class PluginFlyvemdmAgent extends CommonDBTM implements PluginFlyvemdmNotifiable
          }
       }
       throw new AgentSendQueryException(__("Timeout querying the device inventory", 'flyvemdm'));
+   }
+
+   /**
+    * Sends a message on the subtopic dedicated to ping requests
+    *
+    * @return bool
+    * @throws AgentSendQueryException
+    */
+   private function sendRebootQuery() {
+      $message = json_encode(['query' => 'Reboot'], JSON_UNESCAPED_SLASHES);
+      $brokerMessage = new BrokerMessage($message);
+      $envelopeConfig = [];
+      $topic = $this->getTopic();
+      if ($topic !== null) {
+         $finalTopic = $topic . "/Command/Reboot";
+         $envelopeConfig[] = new MqttEnvelope([
+            'topic' => $finalTopic,
+         ]);
+         $envelopeConfig[] = new FcmEnvelope([
+            'topic' => $finalTopic,
+            'scope' => $this->getPushNotificationInfo(),
+         ]);
+      }
+      $envelope = new BrokerEnvelope($brokerMessage, $envelopeConfig);
+      $this->notify($envelope);
+
+      $loopCount = 50;
+      $updatedAgent = new self();
+      while ($loopCount > 0) {
+         usleep(200000); // 200 milliseconds
+         $loopCount--;
+         $updatedAgent->getFromDB($this->getID());
+         if ($updatedAgent->getField('last_contact') != $this->fields['last_contact']) {
+            Session::addMessageAfterRedirect(__('The device restarted', 'flyvemdm'));
+            return true;
+         }
+      }
+      throw new AgentSendQueryException(__("Timeout querying the device", 'flyvemdm'));
    }
 
    /**

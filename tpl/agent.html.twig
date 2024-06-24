@@ -45,18 +45,21 @@
    <td>{{ agent.notification_type|upper }}</td>
 </tr>
 {% if canUpdate == true %}
-<tr class='tab_bg_1'>
-   <td>
-      {{ __('Actions', 'flyvemdm') }}
-   </td>
-   <td>
-      {{ pingButton|raw }}
-   </td>
-   <td>
-      {{ geolocateButton|raw }}
-   </td>
-   <td>
-      {{ inventoryButton|raw }}
-   </td>
-</tr>
+    <tr class="tab_bg_1">
+        <th colspan="4" class="subheader">{{ __('Actions', 'flyvemdm') }}</th>
+    </tr>
+    <tr class='tab_bg_2'>
+        <td align="center">
+            {{ pingButton|raw }}
+        </td>
+        <td align="center">
+            {{ rebootButton|raw }}
+        </td>
+        <td align="center">
+            {{ geolocateButton|raw }}
+        </td>
+        <td align="center">
+            {{ inventoryButton|raw }}
+        </td>
+    </tr>
 {% endif %}
