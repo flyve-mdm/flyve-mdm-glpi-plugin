@@ -694,6 +694,7 @@ class CommonTestCase extends GlpiCommonTestCase {
          'Policy/disableAirplaneMode',
          'Policy/disableStatusBar',
          'Policy/disableScreenCapture',
+         'Policy/disableClipboard',
          'Policy/disableSpeakerphone',
          'Policy/disableUnknownAppSources',
          'Policy/disableStreamMusic',

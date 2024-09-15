@@ -71,6 +71,25 @@ $securityUserInterface = [
       'apple_min_version'                   => '0',
       'apple_max_version'                   => '0',
    ],
+
+   [
+      'name'                                => __('Disable device clipboard', 'flyvemdm'),
+      'symbol'                              => 'disableClipboard',
+      'group'                               => 'ui',
+      'type'                                => 'bool',
+      'type_data'                           => '',
+      'unicity'                             => 1,
+      'plugin_flyvemdm_policycategories_id' => $category,
+      'comment'                             => __('Disable copy or paste actions on the device.',
+         'flyvemdm'),
+      'default_value'                       => '0',
+      'recommended_value'                   => '0',
+      'is_android_system'                   => '0',
+      'android_min_version'                 => '3.0',
+      'android_max_version'                 => '0',
+      'apple_min_version'                   => '0',
+      'apple_max_version'                   => '0',
+   ],
 ];
 
 $category = 'Configuration > User interface';
