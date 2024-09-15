@@ -216,4 +216,20 @@ return [
       'apple_min_version'                   => '0',
       'apple_max_version'                   => '0',
    ],
+
+   [
+      'name'                                => __('APN configuration', 'flyvemdm'),
+      'symbol'                              => 'apnConfiguration',
+      'group'                               => 'connectivity',
+      'type'                                => 'apn',
+      'type_data'                           => '',
+      'unicity'                             => 0,
+      'plugin_flyvemdm_policycategories_id' => $category,
+      'comment'                             => __('Set-up you APN values manually', 'flyvemdm'),
+      'default_value'                       => '',
+      'recommended_value'                   => '',
+      'is_android_policy'                   => '1',
+      'is_android_system'                   => '0',
+      'is_apple_policy'                     => '0',
+   ],
 ];

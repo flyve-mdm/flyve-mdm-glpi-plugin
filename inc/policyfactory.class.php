@@ -78,6 +78,10 @@ class PluginFlyvemdmPolicyFactory {
             $policy = new PluginFlyvemdmPolicyRemovefile($policyData);
             break;
 
+         case 'apn':
+            $policy = new PluginFlyvemdmPolicyApn($policyData);
+            break;
+
          default:
             return null;
       }
