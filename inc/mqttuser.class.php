@@ -37,6 +37,13 @@ if (!defined('GLPI_ROOT')) {
  */
 class PluginFlyvemdmMqttuser extends CommonDBTM {
 
+   private $pbdkf2Settings = [
+      'algorithm'  => 'sha256',
+      'iterations' => 901,
+      'saltSize'   => 12,
+      'keyLength'  => 48,
+   ];
+
    /**
     * @see CommonDBTM::prepareInputForAdd()
     */
@@ -115,34 +122,61 @@ class PluginFlyvemdmMqttuser extends CommonDBTM {
       }
    }
 
+
    /**
     * Hash a password
     * @param string $clearPassword
     * @return string PBKDF2 hashed password
     */
-   protected function hashPassword($clearPassword) {
+   public function hashPassword($clearPassword) {
       // These parameters may be added to the function as a future improvement
-      $algorithm = 'sha256';
-      $saltSize = 12;
-      $keyLength = 24;
-      $salt = base64_encode(openssl_random_pseudo_bytes($saltSize));
-      $iterations = 901;
-      $rawOutput = true;
+      $algorithm = $this->pbdkf2Settings['algorithm'];
+      $keyLength = $this->pbdkf2Settings['keyLength'];
+      $salt = base64_encode(openssl_random_pseudo_bytes($this->pbdkf2Settings['saltSize']));
+      $iterations = $this->pbdkf2Settings['iterations'];
 
-      if ($rawOutput) {
-         $keyLength *= 2;
-      }
+      $hashed = hash_pbkdf2('sha256', $clearPassword, $salt, $iterations, $keyLength, true);
 
-      $hashed = hash_pbkdf2('sha256', $clearPassword, $salt, $iterations, $keyLength, $rawOutput);
-
-      return 'PBKDF2$' . $algorithm . '$' . $iterations . '$' . $salt . '$' . base64_encode($hashed);
+      return implode(
+         '$',
+         [
+            'PBKDF2',
+            $algorithm,
+            $iterations,
+            $salt,
+            base64_encode($hashed)
+         ]
+      );
    }
 
    /**
-    * Generate a random password havind a determined set pf chars
-    * http://stackoverflow.com/a/31284266
+    * Challenge a password against tha hashed password stored in database
+    *
+    * @param string $challenged
+    *
+    * @return boolean true if the password matches the hashed password
+    */
+   public function comparePasswords($challenged) {
+      if ($this->isNewItem()) {
+         return false;
+      }
+
+      $pbdkf2 = explode('$', $this->fields['password']);
+      $algorithm = $pbdkf2[1];
+      $salt = $pbdkf2[3];
+      $iterations = $pbdkf2[2];
+      $keyLength = strlen(base64_decode($pbdkf2[4]));
+      $hashed = hash_pbkdf2($algorithm, $challenged, $salt, $iterations, $keyLength, true);
+      return $hashed === base64_decode($pbdkf2[4]);
+   }
+
+   /**
+    * Generate a random password havind a determined set of chars
+    * @see http://stackoverflow.com/a/31284266
+    *
     * @param integer $length password length to generate
     * @param string $keyspace characters available to build the password
+    *
     * @return string
     * @throws Exception
     */
